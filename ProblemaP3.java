@@ -44,13 +44,6 @@ public class ProblemaP3 {
             grafo = construirGrafo(celulas, d);
 
             Map<Integer, Integer> asignaciones = particionarEnCliquesPorGrado(grafo);
-
-            // Imprimir resultados ordenados por ID
-            List<Integer> idsOrdenados = new ArrayList<>(asignaciones.keySet());
-            Collections.sort(idsOrdenados);
-            for (Integer id : idsOrdenados) {
-                System.out.println(id + " " + asignaciones.get(id));
-            }
         }
         sc.close();
     }
@@ -130,6 +123,7 @@ public class ProblemaP3 {
             // Asignar el grupo a todos los del clique
             for (Integer miembro : clique) {
                 asignaciones.put(miembro, grupoId);
+                System.out.println(miembro + " " + grupoId);
             }
 
             // Removerlos de noAsignados
