@@ -80,64 +80,85 @@ public class ProblemaP3 {
         return g;
     }
 
-    // Ahora ordenamos los nodos por cantidad de aristas de mayor a menor.
-    // En caso de empate en el grado, se ordenan por ID ascendente.
     private static Map<Integer, Integer> particionarEnCliquesPorGrado(Map<Integer, Map<Integer, Integer>> grafo) {
-        Map<Integer, Integer> asignaciones = new HashMap<>();
-        
-        // Crear la lista de nodos y ordenarla
-        List<Integer> nodos = new ArrayList<>(grafo.keySet());
-        nodos.sort((a, b) -> {
+    Map<Integer, Integer> asignaciones = new HashMap<>();
+
+    // Crear la lista de nodos y ordenarla
+    List<Integer> nodos = new ArrayList<>(grafo.keySet());
+    nodos.sort((a, b) -> {
+        int diff = grafo.get(b).size() - grafo.get(a).size();
+        if (diff != 0) return diff;
+        return a - b; // desempate por ID
+    });
+
+    Set<Integer> noAsignados = new HashSet<>(nodos);
+
+    int grupoId = 1;
+
+    while (!noAsignados.isEmpty()) {
+        // Tomar el siguiente nodo no asignado (el primero en la lista 'nodos' que esté en noAsignados)
+        Integer start = null;
+        for (Integer candidato : nodos) {
+            if (noAsignados.contains(candidato)) {
+                start = candidato;
+                break;
+            }
+        }
+
+        // Formar el clique
+        Set<Integer> clique = new HashSet<>();
+        clique.add(start);
+
+        // 'candidatos' será el conjunto de nodos conectados a 'start' y que aún no están asignados
+        Set<Integer> candidatos = new HashSet<>(grafo.get(start).keySet());
+        candidatos.retainAll(noAsignados);
+
+        // Crear y ordenar la lista de candidatos por grado (de mayor a menor)
+        List<Integer> listaCandidatos = new ArrayList<>(candidatos);
+        listaCandidatos.sort((a, b) -> {
             int diff = grafo.get(b).size() - grafo.get(a).size();
             if (diff != 0) return diff;
             return a - b; // desempate por ID
         });
-        
-        Set<Integer> noAsignados = new HashSet<>(nodos);
 
-        int grupoId = 1;
+        // Iterar sobre los candidatos ordenados
+        for (Integer posible : listaCandidatos) {
+            if (posible.equals(start)) continue;
 
-        while (!noAsignados.isEmpty()) {
-            // Tomar el siguiente nodo no asignado (el primero en la lista 'nodos' que esté en noAsignados)
-            Integer start = null;
-            for (Integer candidato : nodos) {
-                if (noAsignados.contains(candidato)) {
-                    start = candidato;
+            // Verificar que 'posible' sea vecino de todos los nodos del clique
+            boolean esClique = true;
+            for (Integer miembro : clique) {
+                if (!grafo.get(posible).containsKey(miembro)) {
+                    esClique = false;
                     break;
                 }
             }
 
-            // Formar el clique
-            Set<Integer> clique = new HashSet<>();
-            clique.add(start);
+            if (esClique) {
+                // Agregar 'posible' al clique
+                clique.add(posible);
 
-            // 'candidatos' será el conjunto de nodos conectados a 'start'
-            Set<Integer> candidatos = new HashSet<>(grafo.get(start).keySet());
-            candidatos.retainAll(noAsignados);
-
-            // Intentar agregar otros nodos al clique
-            for (Integer posible : nodos) {
-                if (!noAsignados.contains(posible) || posible.equals(start)) continue;
-                // Verificar si posible está en candidatos
-                if (candidatos.contains(posible)) {
-                    clique.add(posible);
-                    // Intersecar candidatos con los vecinos de posible
-                    Set<Integer> vecinosPosible = grafo.get(posible).keySet();
-                    candidatos.retainAll(vecinosPosible);
-                }
+                // Intersecar candidatos con los vecinos de 'posible' para seguir manteniendo sólo aquellos 
+                // que son comunes a todos los nodos del clique
+                Set<Integer> vecinosPosible = grafo.get(posible).keySet();
+                candidatos.retainAll(vecinosPosible);
+                nodos.remove(posible); // para que no se vuelva a considerar como candidato
             }
-
-            // Asignar el grupo a todos los del clique
-            for (Integer miembro : clique) {
-                asignaciones.put(miembro, grupoId);
-            }
-
-            // Removerlos de noAsignados
-            noAsignados.removeAll(clique);
-
-            grupoId++;
         }
 
-        return asignaciones;
+        // Asignar el grupo a todos los del clique
+        for (Integer miembro : clique) {
+            asignaciones.put(miembro, grupoId);
+        }
+
+        // Removerlos de noAsignados
+        noAsignados.removeAll(clique);
+
+        grupoId++;
     }
+
+    return asignaciones;
+}
+
+    
 }
